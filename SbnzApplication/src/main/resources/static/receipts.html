@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="ISO-8859-1">
+		<title>ShopBNZ</title>
+		<link href="css/css/bootstrap.min.css" rel="stylesheet">
+		<script type="text/javascript" src="js/jquery.js"></script>
+		<script type="text/javascript" src="js/profile.js"></script>
+		<script type="text/javascript" src="js/receipts.js"></script>
+		
+		<script type="text/javascript">
+			$(document).ready(function(){
+				$.ajax({
+					url:"seller/load-resources",
+					type:"GET",
+					contentType:"application/json",
+					complete:function(data){
+						dta = jQuery.parseJSON(data.responseText);
+						if(!dta.STATUS){
+							window.location.href="login-register.html";
+						}else{
+							$("#user-badge").append(dta.USER.username);
+							$("#info-table").html(generateTableDataUser(dta.USER,dta.BUYER));
+						}
+						if(dta.USER.role == 0){
+							$("#main-navbar").append("<li><a href=\"shopping.html\">Shopping</a></li>");
+							$("#main-navbar").append("<li><a href=\"shopping-cart.html\">Cart</a></li>");
+							generatePurchasePanel(dta.USER_RECEIPTS);
+						}else if(dta.USER.role == 2){
+							$("#main-navbar").append("<li><a href=\"admin-control-panel.html\">Control Panel</a></li>");
+							$("#button-purchase-history").hide();
+						}else if(dta.USER.role == 1){
+							$("#button-purchase-history").hide();
+							console.log(dta);
+							receiptPanelFcn(dta.UNPROCESSED_RECEIPTS);
+							productStockPanel(dta.PRODUCTS_FOR_ORDERING,dta.ALL_AVAILABLE_PRODUCTS);
+						}
+					}
+				});
+			});
+		</script>
+		
+	</head>
+	<body style="padding-top:70px;">
+		
+		<!-- NAVBAR TEMPLATE -->
+		<nav class="navbar navbar-inverse navbar-fixed-top">
+			<a class="navbar-brand" href="index.html">ShopBNZ</a>
+			<div class="collapse navbar-collapse" id="navbarNav">
+				<ul class="nav navbar-nav" id="main-navbar">
+					<li class="active">
+						<a href="receipts.html">Products And Receipts</a>
+					</li>
+				</ul>
+				<ul class="nav navbar-nav navbar-right">
+					<li>
+						<a href="profile.html" id="user-badge"><span class="glyphicon glyphicon-user"></span> </a>
+					</li>
+					<li>
+						<a href="#" id="logout-button"><span class="glyphicon glyphicon-off"></span> Logout&nbsp;&nbsp;</a>
+					</li>
+				</ul>
+			</div>
+		</nav>
+		
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+					<h1>Product Stock And Receipts</h1>				
+				</div>
+			</div>
+			
+			<div class="row" id="controls">
+				<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+					<div class="btn-group" role="group" aria-label="...">
+						<button type="button" class="btn btn-primary" id="button-products">Product Stock</button>
+						<button type="button" class="btn btn-default" id="button-receipts">Receipts</button>
+					</div>				
+				</div>
+			</div>
+			
+			<!-- product ordering panel -->
+			<div class="row" id="product-div">
+				<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h3>Products</h3>
+						</div>
+						<div class="panel-body">
+							<div class="container-fluid" id="product-container">
+								
+							</div>
+						</div>
+					</div>				
+				</div>
+			</div>
+			
+			<!-- receipt panel -->
+			<div class="row" id="receipt-div" hidden="hidden">
+				<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h3>Unprocessed Receipts</h3>
+						</div>
+						<div class="panel-body">
+							<div class="container-fluid" id="receipt-panel">
+								
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<!-- FOOTER TEMPLATE -->
+		<hr/>
+		<footer>
+			<div class="container-fluid">
+				<div class="row">
+					<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+						&copy; Djuka Industries <br/>
+						&reg; SBNZ - shop
+					</div>
+					<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+						Contact me at <a href="mailto:milanns@live.com?Subject=I%20Loved%20Your%20Project">milanns@live.com</a>
+					</div>
+				</div>
+			</div>
+		</footer>
+		<script type="text/javascript" src="js/navbar-functions.js"></script>
+	
+		<script type="text/javascript">
+			infoButton = "#button-products";
+			historyButton = "#button-receipts";
+			
+			primaryButton = "btn-primary";
+			defButton = "btn-default";
+			
+			infoDiv = "#product-div";
+			historyDiv = "#receipt-div";
+			
+			$("#button-products").click(function(evt) {
+				
+				setPrimary(infoButton,historyButton);
+				showHidePanels(infoDiv, historyDiv);
+			});
+			
+			$("#button-receipts").click(function(evt){
+				
+				setPrimary(historyButton, infoButton);
+				showHidePanels(historyDiv, infoDiv);
+			});
+			
+			function setPrimary(prim,sec){
+				$(prim).addClass(primaryButton);
+				$(prim).removeClass(defButton);
+			
+				$(sec).removeClass(primaryButton);
+				$(sec).addClass(defButton);
+			}
+			
+			function showHidePanels(sho,hid){
+				$(sho).show();
+				$(hid).hide();
+			}
+		</script>
+	</body>
+</html>

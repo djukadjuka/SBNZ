@@ -1,0 +1,25 @@
+package rules
+
+import com.djuka.ftn.controllers.ruleWrappers.ProductOrderingWrapper
+import java.util.HashMap
+
+rule "Ordered more products than exist in shop"
+	agenda-group "OrderingRules"
+	when
+		$wrapper: ProductOrderingWrapper( orderedNumber > 0, product.getAmountInStock() < orderedNumber )
+		$map: HashMap( this[$wrapper.product.getId()] == null )
+	then
+		System.out.println("FIRED MORE THAN AVAILABLE");
+		$map.put($wrapper.product.getId(), "More products of this kind are ordered than the amount in the shop.");
+end
+
+rule "Product lower than allowed quantity"
+	agenda-group "OrderingRules"
+	when 
+		$wrapper: ProductOrderingWrapper( product.getAmountInStock() < product.getMinAmountInStock())
+		$map: HashMap( this[$wrapper.product.getId()] == null )
+	then
+		System.out.println("FIRED UNDER ALLOWED LIMIT");
+		$map.put($wrapper.product.getId(), "The product is under the allowed limit");
+		$wrapper.product.setRestock(true);
+end

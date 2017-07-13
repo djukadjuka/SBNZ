@@ -1,0 +1,50 @@
+package rules
+
+import com.djuka.ftn.controllers.ruleWrappers.ReceiptDiscountWrapper
+import com.djuka.ftn.model.receipts.FullDiscount
+import java.util.List
+import java.lang.Long
+import java.lang.Float
+
+
+rule "Initial 5%, initial price > 20000"
+	agenda-group "FullReceiptDiscountRules"
+	when
+		$wrapper: ReceiptDiscountWrapper( initialDiscount == null, productPrice > 200000 )
+	then
+		System.out.println("FIRED INITIAL 5% ON FULL RECEIPT");
+		$wrapper.initialDiscount = new FullDiscount();
+		$wrapper.initialDiscount.setInitialDiscount(true);
+		$wrapper.initialDiscount.setDiscountPercentage((float)5);
+end
+
+rule "Bonus %1, buyer for more than 2 years"
+	agenda-group "FullReceiptDiscountRules"
+	when
+		$wrapper: ReceiptDiscountWrapper( userLogDate < currentDate - years2, addedDiscounts not contains 1 )
+	then
+		System.out.println("FIRED 1% BONUS ON RECEIPT");
+		$wrapper.addedDiscounts.add(1);
+		$wrapper.bonusDiscounts.add(new FullDiscount(false,(float)1));
+end
+
+rule "Bonus %1, buyer is silver or gold"
+	agenda-group "FullReceiptDiscountRules"
+	when
+		$wrapper: ReceiptDiscountWrapper( userCategoryName=="GOLD" || userCategoryName=="SILVER", addedDiscounts not contains 2 )
+	then
+		System.out.println("FIRED 1% BONUS ON SILVER/GOLDER");
+		$wrapper.addedDiscounts.add(2);
+		$wrapper.bonusDiscounts.add(new FullDiscount(false,(float)1));
+end
+
+rule "Bons %3 totl more than 50k"
+	agenda-group "FullReceiptDiscountRules"
+	when
+		$wrapper: ReceiptDiscountWrapper( addedDiscounts not contains 3, productPrice > 50000, maxPrice > (productPrice/2))
+	then
+		System.out.println("FIRED 3% BONUS ON TOTAL > 50000, >10 > 50% OF TOTAL");
+		$wrapper.addedDiscounts.add(3);
+		$wrapper.bonusDiscounts.add(new FullDiscount(false,(float)3));
+end
+

@@ -1,0 +1,65 @@
+package rules
+
+import com.djuka.ftn.model.products.Product
+import com.djuka.ftn.controllers.wrappers.ProductSearchWrapper
+import com.djuka.ftn.model.products.ProductCategory
+
+rule "Filter by Product Name"
+	agenda-group "Product Search"
+	when
+		$wrapperObject : ProductSearchWrapper( productName != "" )
+		$productObject : Product( name not contains $wrapperObject.productName, id != -1)
+	then
+		update($productObject){$productObject.setId(-1);}
+end
+
+//productCategory.categoryName not contains $wrapperObject.categoryName,
+
+rule "Filter by Category Name"
+	agenda-group "Product Search"
+	when
+		$wrapperObject: ProductSearchWrapper( categoryName != "")
+		$productObject : Product(id != -1)
+		ProductCategory(categoryName not contains $wrapperObject.categoryName) from $productObject.getProductCategory()
+	then
+		update($productObject){
+			$productObject.setProductCategory($productObject.getProductCategory().getParentCategory());
+		};
+end
+
+rule "Filter by Product Code"
+	agenda-group "Product Search"
+	when
+		$wrapperObject: ProductSearchWrapper( productCode != 0)
+		$productObject : Product( id != -1, id != $wrapperObject.productCode)
+	then
+		update($productObject){$productObject.setId(-1);}
+end
+
+rule "Filter by Price Min"
+	agenda-group "Product Search"
+	when
+		$wrapperObject:  ProductSearchWrapper( minPrice != -1)
+		$productObject: Product( id != -1, price < $wrapperObject.minPrice)
+	then
+		update($productObject){
+			$productObject.setId(-1);
+		}
+end
+
+rule "Filter by Price Max"
+	agenda-group "Product Search"
+	when
+		$wrapperObject: ProductSearchWrapper( maxPrice != -1)
+		$productObject: Product( id!=-1, price > $wrapperObject.maxPrice)
+	then
+		update($productObject){$productObject.setId(-1);}
+end
+
+rule "Fire me"
+	agenda-group "Others..."
+	when
+		$productObject : Product()
+	then
+		System.out.println("This must not fire...");
+end

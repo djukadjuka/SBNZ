@@ -1,0 +1,118 @@
+package rules
+
+import com.djuka.ftn.model.receipts.ReceiptEntry
+import com.djuka.ftn.model.receipts.EntryDiscount
+import com.djuka.ftn.model.products.Product
+import com.djuka.ftn.model.products.ProductCategory
+import com.djuka.ftn.model.receipts.Receipt
+import com.djuka.ftn.controllers.ruleWrappers.BonusDiscountRuleWrapper
+import com.djuka.ftn.model.products.SalesEvent
+import java.util.List
+import java.lang.Long
+
+global Product targetProduct;
+global Long days15;
+global Long days30;
+global Long currentTime;
+
+rule "Osnovni Popust 10% vise od 20 artikala nije siroka potrosnja"
+	agenda-group "OsnovniPopustStavka"
+	when
+		$initialEntry: EntryDiscount( discrountPercentage < 10.0, initialDiscount )
+		$product: Product( productCategory.getCategoryName() != "Wholesale" )
+		$receiptEntry: ReceiptEntry( numberOfProducts > 20 )
+	then
+		System.out.println("FIRED 10% FOR BASIC DISCOUNT ON ENTRY");
+		modify($initialEntry){
+			setDiscrountPercentage((float)10);
+		}
+end
+	
+rule "Osnovni Popust 5%, vise od 5 artikala, jeste televizor, racunar, laptop"
+	agenda-group "OsnovniPopustStavka"
+	when
+		$initialEntry: EntryDiscount( discrountPercentage < 5.0, initialDiscount )
+		$product: Product( productCategory.getCategoryName() contains "Laptop" || productCategory.getCategoryName() contains "Television" || productCategory.getCategoryName() contains "PC")
+		$receiptEntry: ReceiptEntry( numberOfProducts > 5 )
+	then
+		System.out.println("FIRED 5% FOR BASIC DISCOUNT ON ENTRY");
+		modify($initialEntry){
+			setDiscrountPercentage((float)5);
+		}
+end
+
+rule "Osnovni Popust 7%, ukupno preko 5000, wholesale"
+	agenda-group "OsnovniPopustStavka"
+	when
+		$initialEntry: EntryDiscount( discrountPercentage < 7.0, initialDiscount )
+		$product: Product( productCategory.getCategoryName() == "Wholesale")
+		$receiptEntry: ReceiptEntry( totalPrice > 5000)
+	then
+		System.out.println("FIRED 7% FOR BASIC DISCOUNT ON ENTRY");
+		modify($initialEntry){
+			setDiscrountPercentage((float)7);
+		}
+end
+
+rule "Dodatni Popust 2%, proizvod kupljen do pre 15 dana"
+	agenda-group "DodatniPopustStavka"
+	when
+		$bonuses : BonusDiscountRuleWrapper(addedEntries not contains ((float)2))
+		$receiptsForUser : List(size > 0)
+		$validReceipts : List(size > 0) from collect(Receipt( dateOfTransaction > days15) from $receiptsForUser)
+		$validEntries : List(size > 0) from accumulate(
+			$rec : Receipt( $listOfEntries : receiptEntries) from $validReceipts
+			and
+			$record : ReceiptEntry() from $listOfEntries,
+			collectList($record)
+		)
+		$validProducts : List(size > 0) from accumulate(
+			$entry : ReceiptEntry() from $validEntries, 
+			collectList($entry.getProduct())
+		)
+		$validProduct : Product( targetProduct.getId() == id) from $validProducts
+	then
+		System.out.println("FIRED 2% ADDITIONAL ON ENTRY");
+		modify($bonuses){
+			addedEntries.add((float)2);
+		}
+end
+
+rule "Dodatni Popust 1%, proizvod iz kategorije do pre 30 dana"
+	agenda-group "DodatniPopustStavka"
+	when
+		$bonuses: BonusDiscountRuleWrapper(addedEntries not contains ((float)1))
+		$receiptsForUser : List(size > 0)
+		$validReceipts : List(size > 0) from collect(Receipt( dateOfTransaction > days30) from $receiptsForUser)
+		
+		$validEntries : List(size > 0) from accumulate(
+			$rec : Receipt( $listOfEntries : receiptEntries) from $validReceipts
+			and
+			$record : ReceiptEntry() from $listOfEntries,
+			collectList($record)
+		)
+		$validProducts : List(size > 0) from accumulate(
+			$entry : ReceiptEntry() from $validEntries, 
+			collectList($entry.getProduct())
+		)
+		$validProduct : Product( targetProduct.getProductCategory().getId() == productCategory.getId()) from $validProducts
+	then
+		System.out.println("FIRED 1% ADDITIONAL ON ENTRY");
+		modify($bonuses){
+			addedEntries.add((float)1);
+		}
+end
+
+rule "Dodatni Popust x%, proizvod na akciji"
+	agenda-group "DodatniPopustStavka"
+	when
+		$bonus : BonusDiscountRuleWrapper()
+		$event : SalesEvent( currentTime <= endDate, currentTime >= startDate) from $bonus.salesEvents
+		BonusDiscountRuleWrapper( specialKeys not contains (Integer)$event.getId())
+	then
+		System.out.println("FIRED x% ADDITIONAL ON ENTRY");
+		modify($bonus){
+			specialKeys.add($event.getId());
+		}
+end
+

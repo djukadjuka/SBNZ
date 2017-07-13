@@ -1,0 +1,13 @@
+package rules
+
+import com.djuka.ftn.controllers.ruleWrappers.PointsWrapper
+import java.lang.Math
+
+rule "Calculate points for buyer"
+	agenda-group "PointCalculation"
+	when
+		$wrapper: PointsWrapper( buyerCategory.getPointsPercentage() != (float)0, finalReceiptPrice >= buyerCategory.getSpendingBoundMin(), finalReceiptPrice <= buyerCategory.getSpendingBoundMax())
+	then
+		System.out.println("POINTS RULE FIRED");
+		$wrapper.achievedPoints = (int) Math.ceil($wrapper.finalReceiptPrice * $wrapper.buyerCategory.getPointsPercentage() / 100);
+end

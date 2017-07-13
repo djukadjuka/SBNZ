@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="ISO-8859-1">
+		<title>ShopBNZ</title>
+		<link href="css/css/bootstrap.min.css" rel="stylesheet">
+		<script type="text/javascript" src="js/jquery.js"></script>
+		<script type="text/javascript" src="js/shopping-cart.js"></script>
+		
+		<script type="text/javascript">
+			$(document).ready(function(){
+				$.ajax({
+					url:"shopping-cart/load-resources",
+					type:"GET",
+					contentType:"application/json",
+					complete:function(data){
+						dta = jQuery.parseJSON(data.responseText);
+						if(!dta.STATUS){
+							window.location.href="login-register.html";
+						}else if( dta.USER.role != 0){
+							window.location.href="index.html";
+						}else{
+							var receipt = dta.USER_RECEIPT;
+							var receiptEntries = receipt.receiptEntries;
+							if(receiptEntries == null || receiptEntries.size == 0){
+								window.location.href= "shopping.html";
+							}
+							var productNum = 0;
+							for(var i in receiptEntries){
+								productNum += receiptEntries[i].numberOfProducts;
+							}
+							if(productNum < 1){
+								window.location.href = "shopping.html";
+							}
+							
+							$("#user-badge").append(dta.USER.username);
+							$("#spending-points").attr('max',dta.BUYER.rewardPoints);
+							
+							fillBaseData(dta.USER_RECEIPT);
+							buildEntries(dta.USER_RECEIPT.receiptEntries);
+						}
+					}
+				});	
+			});
+		</script>
+		
+	</head>
+	<body style="padding-top:70px;">
+		
+		<!-- NAVBAR TEMPLATE -->
+		<nav class="navbar navbar-inverse navbar-fixed-top">
+			<a class="navbar-brand" href="index.html">ShopBNZ</a>
+			<div class="collapse navbar-collapse" id="navbarNav">
+				<ul class="nav navbar-nav">
+					<li>
+						<a href="shopping.html">Shopping</a>
+					</li>
+					<li class="active">
+						<a href="#">Cart</a>
+					</li>
+				</ul>
+				<ul class="nav navbar-nav navbar-right">
+					<li>
+						<a href="profile.html" id="user-badge"><span class="glyphicon glyphicon-user"></span> </a>
+					</li>
+					<li>
+						<a href="#" id="logout-button"><span class="glyphicon glyphicon-off"></span> Logout&nbsp;&nbsp;</a>
+					</li>
+				</ul>
+			</div>
+		</nav>
+		
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+					<h1>Shopping Cart</h1>				
+				</div>
+			</div>
+			
+			<!-- Search Controls -->
+			<div class="row" id="controls">
+				<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+					<form class="form-inline">
+						<div class="form-group">
+							<label>Spending Points</label>
+							<input type="number" class="form-control" id="spending-points" min="0" max="0">
+							<button type="button" class="btn btn-primary" onclick="calculateReceipt()">Calculate Price</button>	
+							<button type="button" class="btn btn-primary" onclick="buyStuff()">Purchase</button>					
+						</div>
+					</form>
+				</div>
+			</div>
+			
+			<div class="row">
+				<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+					<div class="panel panel-default">
+						<div class="panel-body" id="receipt-panel">
+							
+							<div class="container-fluid" id="receipt-bonuses-div">
+								<div class="row">
+									<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12" id="receipt-bonuses">
+										<div class="well">
+										
+											<table class="table">
+												<tr>
+													<th>Initial Price</th>
+													<td id="initial-receipt-price"></td>
+												</tr>
+												<tr>
+													<th>Final Price</th>
+													<td id="final-receipt-price"></td>
+												</tr>
+												<tr>
+													<th>Discount Precentage</th>
+													<td id="receipt-discount-percentage"></td>
+												</tr>
+											</table>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+							<div class="well" id="receipt-entries-well-div">
+								<h3>Receipt Entries</h3>
+								<div class="container-fluid" id="receipt-entries-container-div">
+									
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+		</div>
+		
+		<!-- FOOTER TEMPLATE -->
+		<hr/>
+		<footer>
+			<div class="container-fluid">
+				<div class="row">
+					<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+						&copy; Djuka Industries <br/>
+						&reg; SBNZ - shop
+					</div>
+					<div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
+						Contact me at <a href="mailto:milanns@live.com?Subject=I%20Loved%20Your%20Project">milanns@live.com</a>
+					</div>
+				</div>
+			</div>
+		</footer>
+		<script type="text/javascript" src="js/navbar-functions.js"></script>
+		
+	</body>
+</html>
